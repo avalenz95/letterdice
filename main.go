@@ -69,6 +69,12 @@ type Graph struct {
 
 //bfs breath first search on graph
 func (g Graph) bfs() bool {
+	//Reset backedges on every bfs call
+	for _, node := range g.Nodes {
+		node.Visited = false
+		node.BackEdge = nil
+	}
+
 	queue := make([]int, 10)
 	queue = append(queue, SOURCE)
 
@@ -105,8 +111,47 @@ func (g Graph) bfs() bool {
 	return false
 }
 
+//canSpell solve with backwards approach
 func (g Graph) canSpell() bool {
 
+	//Find a path
+	for g.bfs() == true {
+		//Get Last node
+		node := g.Nodes[len(g.Nodes)-1]
+		var letter int
+		//Traverse Backedges
+		for node.Type != SOURCE {
+			//Change Flow
+			node.BackEdge.Original = 1
+			node.BackEdge.Residual = 0
+			node.BackEdge.Reverse.Original = 0
+			node.BackEdge.Reverse.Residual = 1
+
+			//Store letter
+			if node.Type == LETTER {
+				letter = node.ID
+			} else if node.Type == DIE {
+				g.NodeIDS[letter] = node.ID //Add letter to solution
+			}
+
+			//Advance
+			node = node.BackEdge.To
+		}
+	}
+
+	for index := g.minNodes + 1; index < len(g.Nodes); index++ {
+		for _, n := range g.Nodes[index].Adj {
+
+			//Look at sink
+			if n.To.Type == SINK {
+				//Not connected, cant spell
+				if n.Residual != 1 {
+					return false
+				}
+			}
+		}
+	}
+	return true
 }
 
 //resetNodes adj list resid/origi
