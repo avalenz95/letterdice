@@ -73,21 +73,22 @@ type Graph struct {
 
 //bfs breath first search on graph
 func (g Graph) bfs() bool {
+
+	fmt.Println("BFS")
 	//Reset backedges on every bfs call
 	for _, node := range g.Nodes {
 		node.Visited = false
 		node.BackEdge = nil
 	}
-
-	queue := make([]int, 10)
+	var queue []int
 	queue = append(queue, SOURCE)
 
 	//Continue until queue is empty
 	for len(queue) > 0 {
+		fmt.Printf("queue: %+v \n", queue)
 		//dequeue item
 		nodeID := queue[0]
 		queue = queue[1:]
-
 		//mark node as visited
 		g.Nodes[nodeID].Visited = true
 		var nextNode *Node
@@ -107,6 +108,7 @@ func (g Graph) bfs() bool {
 
 				//Path has been found
 				if nextNode.Type == SINK {
+					fmt.Println("here")
 					return true
 				}
 			}
@@ -168,7 +170,7 @@ type Inputs struct {
 func main() {
 
 	input := Inputs{
-		Word: "RANEB",
+		Word: "RAGE",
 		Die: []string{
 			"ENG",
 			"SAA",
@@ -176,21 +178,21 @@ func main() {
 			"EAE",
 		},
 	}
-	//Example Dice
 
 	var graph Graph
 	nextID := 0
-	graph.minNodes = nextID
 	//Create Source add to graph
 	source := NewNode(0, SOURCE)
 	graph.Nodes = append(graph.Nodes, &source)
 	//Create Sink Node
-	sink := NewNode(0, SOURCE)
+	sink := NewNode(0, SINK)
 
 	for _, dice := range input.Die {
 		nextID++
+		//Connect to source
 		node := NewNode(nextID, DIE)
-
+		edge := NewEdge(&source, &node)
+		source.Adj = append(source.Adj, &edge)
 		//Init dice letters slice
 		for _, letter := range dice {
 			pos := letter - 'A'
@@ -199,6 +201,8 @@ func main() {
 		node.Type = DIE
 		graph.Nodes = append(graph.Nodes, &node)
 	}
+
+	graph.minNodes = nextID
 
 	//Create Letter Nodes
 	for _, letter := range input.Word {
@@ -219,15 +223,28 @@ func main() {
 		node.Adj = append(node.Adj, &edge)
 		graph.Nodes = append(graph.Nodes, &node)
 	}
-
 	//Add sink to end of graph
 	sink.ID = len(graph.Nodes)
-	graph.Nodes = append(graph.Nodes, &sink)
 
+	graph.Nodes = append(graph.Nodes, &sink)
+	for _, node := range graph.Nodes {
+		fmt.Printf("ID: %v, Type: %v \n", node.ID, node.Type)
+		for _, edge := range node.Adj {
+			fmt.Printf("edge for %v , %v -->  %v \n", node.ID, edge.From.ID, edge.To.ID)
+		}
+	}
 	if graph.canSpell() == true {
 		fmt.Println("Can Spell")
 	} else {
 		fmt.Println("Can't Spell")
+	}
+
+	fmt.Println("-----------------")
+	for _, node := range graph.Nodes {
+		fmt.Printf("ID: %v, Type: %v \n", node.ID, node.Type)
+		for _, edge := range node.Adj {
+			fmt.Printf("edge for %v , %v -->  %v \n", node.ID, edge.From.ID, edge.To.ID)
+		}
 	}
 
 }
