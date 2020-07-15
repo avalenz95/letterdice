@@ -1,5 +1,7 @@
 package main
 
+import "fmt"
+
 //NodeTypes
 const (
 	SOURCE int = 0
@@ -39,7 +41,7 @@ type Edge struct {
 }
 
 //NewEdge Creates edges from -> to and to -> from
-func NewEdge(from *Node, to *Node) {
+func NewEdge(from *Node, to *Node) Edge {
 	var edge Edge
 	var reverseEdge Edge
 
@@ -58,6 +60,8 @@ func NewEdge(from *Node, to *Node) {
 		Original: 0,
 		Residual: 1,
 	}
+
+	return edge
 }
 
 //Graph contains nodes and all helper functions
@@ -139,6 +143,7 @@ func (g Graph) canSpell() bool {
 		}
 	}
 
+	//
 	for index := g.minNodes + 1; index < len(g.Nodes); index++ {
 		for _, n := range g.Nodes[index].Adj {
 
@@ -154,7 +159,75 @@ func (g Graph) canSpell() bool {
 	return true
 }
 
-//resetNodes adj list resid/origi
-func (g Graph) resetNodes() {
+//Inputs passed into the program
+type Inputs struct {
+	Word string
+	Die  []string
+}
+
+func main() {
+
+	input := Inputs{
+		Word: "RANEB",
+		Die: []string{
+			"ENG",
+			"SAA",
+			"PRR",
+			"EAE",
+		},
+	}
+	//Example Dice
+
+	var graph Graph
+	nextID := 0
+	graph.minNodes = nextID
+	//Create Source add to graph
+	source := NewNode(0, SOURCE)
+	graph.Nodes = append(graph.Nodes, &source)
+	//Create Sink Node
+	sink := NewNode(0, SOURCE)
+
+	for _, dice := range input.Die {
+		nextID++
+		node := NewNode(nextID, DIE)
+
+		//Init dice letters slice
+		for _, letter := range dice {
+			pos := letter - 'A'
+			node.Letters[pos] = true
+		}
+		node.Type = DIE
+		graph.Nodes = append(graph.Nodes, &node)
+	}
+
+	//Create Letter Nodes
+	for _, letter := range input.Word {
+		nextID++
+		node := NewNode(nextID, LETTER)
+		pos := letter - 'A'
+		node.Letters[pos] = true
+
+		//Set Edges for each letter
+		for index := 1; index < graph.minNodes; index++ {
+			if graph.Nodes[index].Letters[pos] == true {
+				edge := NewEdge(&node, &sink)
+				graph.Nodes[index].Adj = append(graph.Nodes[index].Adj, &edge)
+				node.Adj = append(node.Adj, edge.Reverse)
+			}
+		}
+		edge := NewEdge(&node, &sink)
+		node.Adj = append(node.Adj, &edge)
+		graph.Nodes = append(graph.Nodes, &node)
+	}
+
+	//Add sink to end of graph
+	sink.ID = len(graph.Nodes)
+	graph.Nodes = append(graph.Nodes, &sink)
+
+	if graph.canSpell() == true {
+		fmt.Println("Can Spell")
+	} else {
+		fmt.Println("Can't Spell")
+	}
 
 }
