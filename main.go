@@ -92,25 +92,22 @@ func (g Graph) bfs() bool {
 		queue = queue[1:]
 		//mark node as visited
 		g.Nodes[nodeID].Visited = true
-		var nextNode *Node
-		var edge *Edge
 
 		//Iterate over adj list
-		for _, node := range g.Nodes[nodeID].Adj {
-			nextNode = node.To
-			edge = node
+		for _, edge := range g.Nodes[nodeID].Adj {
+			nextNode := edge.To
+			e := edge
 
 			//Add unvisited nodes flowing in the right direction to queue
-			if nextNode.Visited == false && edge.Original == 1 {
+			if nextNode.Visited == false && e.Original == 1 {
+				//Set the backedge for the node
+				nextNode.BackEdge = e.Reverse
+				//Add to queue
+				queue = append(queue, nextNode.ID)
 
 				//Path has been found
 				if nextNode.Type == SINK {
 					return true
-				} else {
-					//Set the backedge for the node
-					nextNode.BackEdge = edge.Reverse
-					//Add to queue
-					queue = append(queue, nextNode.ID)
 				}
 			}
 		}
@@ -181,6 +178,7 @@ func main() {
 	}
 
 	var graph Graph
+	graph.NodeIDS = make(map[int]int)
 	nextID := 0
 	//Create Source add to graph
 	source := NewNode(0, SOURCE)
@@ -232,6 +230,12 @@ func main() {
 		for _, edge := range node.Adj {
 			fmt.Printf("edge for %v , %v -->  %v \n", node.ID, edge.From.ID, edge.To.ID)
 		}
+	}
+	fmt.Println("-----------------")
+	if graph.canSpell() == true {
+		fmt.Println("Can Spell")
+	} else {
+		fmt.Println("Can't Spell")
 	}
 
 	fmt.Println("-----------------")
