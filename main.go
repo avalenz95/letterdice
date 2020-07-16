@@ -21,13 +21,13 @@ type Node struct {
 }
 
 //NewNode creates a new node
-func NewNode(id int, nodeType int) Node {
-	n := Node{
+func NewNode(id int, nodeType int) *Node {
+	node := Node{
 		ID:      id,
 		Letters: make([]bool, 26),
 		Type:    nodeType,
 	}
-	return n
+	return &node
 }
 
 //Edge connects two nodes
@@ -41,7 +41,7 @@ type Edge struct {
 }
 
 //NewEdge Creates edges from -> to and to -> from
-func NewEdge(from *Node, to *Node) Edge {
+func NewEdge(from *Node, to *Node) *Edge {
 	var edge Edge
 	var reverseEdge Edge
 
@@ -61,7 +61,7 @@ func NewEdge(from *Node, to *Node) Edge {
 		Residual: 1,
 	}
 
-	return edge
+	return &edge
 }
 
 //Graph contains nodes and all helper functions
@@ -80,6 +80,7 @@ func (g Graph) bfs() bool {
 		node.Visited = false
 		node.BackEdge = nil
 	}
+
 	var queue []int
 	queue = append(queue, SOURCE)
 
@@ -101,15 +102,15 @@ func (g Graph) bfs() bool {
 
 			//Add unvisited nodes flowing in the right direction to queue
 			if nextNode.Visited == false && edge.Original == 1 {
-				//Set the backedge for the node
-				nextNode.BackEdge = edge.Reverse
-				//Add to queue
-				queue = append(queue, nextNode.ID)
 
 				//Path has been found
 				if nextNode.Type == SINK {
-					fmt.Println("here")
 					return true
+				} else {
+					//Set the backedge for the node
+					nextNode.BackEdge = edge.Reverse
+					//Add to queue
+					queue = append(queue, nextNode.ID)
 				}
 			}
 		}
@@ -183,7 +184,7 @@ func main() {
 	nextID := 0
 	//Create Source add to graph
 	source := NewNode(0, SOURCE)
-	graph.Nodes = append(graph.Nodes, &source)
+	graph.Nodes = append(graph.Nodes, source)
 	//Create Sink Node
 	sink := NewNode(0, SINK)
 
@@ -191,17 +192,16 @@ func main() {
 		nextID++
 		//Connect to source
 		node := NewNode(nextID, DIE)
-		edge := NewEdge(&source, &node)
-		source.Adj = append(source.Adj, &edge)
+		edge := NewEdge(source, node)
+		source.Adj = append(source.Adj, edge)
 		//Init dice letters slice
 		for _, letter := range dice {
 			pos := letter - 'A'
 			node.Letters[pos] = true
 		}
 		node.Type = DIE
-		graph.Nodes = append(graph.Nodes, &node)
+		graph.Nodes = append(graph.Nodes, node)
 	}
-
 	graph.minNodes = nextID
 
 	//Create Letter Nodes
@@ -214,29 +214,24 @@ func main() {
 		//Set Edges for each letter
 		for index := 1; index < graph.minNodes; index++ {
 			if graph.Nodes[index].Letters[pos] == true {
-				edge := NewEdge(&node, &sink)
-				graph.Nodes[index].Adj = append(graph.Nodes[index].Adj, &edge)
+				edge := NewEdge(graph.Nodes[index], node)
+				graph.Nodes[index].Adj = append(graph.Nodes[index].Adj, edge)
 				node.Adj = append(node.Adj, edge.Reverse)
 			}
 		}
-		edge := NewEdge(&node, &sink)
-		node.Adj = append(node.Adj, &edge)
-		graph.Nodes = append(graph.Nodes, &node)
+		edge := NewEdge(node, sink)
+		node.Adj = append(node.Adj, edge)
+		graph.Nodes = append(graph.Nodes, node)
 	}
 	//Add sink to end of graph
 	sink.ID = len(graph.Nodes)
 
-	graph.Nodes = append(graph.Nodes, &sink)
+	graph.Nodes = append(graph.Nodes, sink)
 	for _, node := range graph.Nodes {
 		fmt.Printf("ID: %v, Type: %v \n", node.ID, node.Type)
 		for _, edge := range node.Adj {
 			fmt.Printf("edge for %v , %v -->  %v \n", node.ID, edge.From.ID, edge.To.ID)
 		}
-	}
-	if graph.canSpell() == true {
-		fmt.Println("Can Spell")
-	} else {
-		fmt.Println("Can't Spell")
 	}
 
 	fmt.Println("-----------------")
