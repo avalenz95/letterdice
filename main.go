@@ -105,7 +105,7 @@ func (g Graph) bfs() bool {
 				//Add to queue
 				queue = append(queue, nextNode.ID)
 
-				//Path has been found
+				//Element is still connected to sink
 				if nextNode.Type == SINK {
 					return true
 				}
@@ -145,12 +145,12 @@ func (g Graph) canSpell() bool {
 
 	//
 	for index := g.minNodes + 1; index < len(g.Nodes); index++ {
-		for _, n := range g.Nodes[index].Adj {
+		for _, e := range g.Nodes[index].Adj {
 
 			//Look at sink
-			if n.To.Type == SINK {
+			if e.To.Type == SINK {
 				//Not connected, cant spell
-				if n.Residual != 1 {
+				if e.Residual != 1 {
 					return false
 				}
 			}
@@ -210,7 +210,7 @@ func main() {
 		node.Letters[pos] = true
 
 		//Set Edges for each letter
-		for index := 1; index < graph.minNodes; index++ {
+		for index := 1; index <= graph.minNodes; index++ {
 			if graph.Nodes[index].Letters[pos] == true {
 				edge := NewEdge(graph.Nodes[index], node)
 				graph.Nodes[index].Adj = append(graph.Nodes[index].Adj, edge)
@@ -234,9 +234,12 @@ func main() {
 	fmt.Println("-----------------")
 	if graph.canSpell() == true {
 		fmt.Println("Can Spell")
+
 	} else {
 		fmt.Println("Can't Spell")
 	}
+
+	fmt.Printf("Solution: %+v \n", graph.NodeIDS)
 
 	fmt.Println("-----------------")
 	for _, node := range graph.Nodes {
