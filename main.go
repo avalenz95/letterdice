@@ -15,7 +15,7 @@ type Node struct {
 	ID       int
 	Letters  []bool
 	Adj      []*Edge //Adjacency List
-	Type     int     // type of node source, sink, die, letter
+	Type     int     //type of node source, sink, die, letter
 	Visited  bool
 	BackEdge *Edge
 }
@@ -37,7 +37,6 @@ type Edge struct {
 	Reverse  *Edge //Edge in the opposite direction
 	Original int   // Flow Field
 	Residual int   // Flow Field
-	//TODO: Init reverse edge inplace
 }
 
 //NewEdge Creates edges from -> to and to -> from
@@ -66,15 +65,14 @@ func NewEdge(from *Node, to *Node) *Edge {
 
 //Graph contains nodes and all helper functions
 type Graph struct {
-	Nodes    []*Node
-	NodeIDS  map[int]int
-	minNodes int
+	Nodes     []*Node
+	NodeIDS   map[int]int
+	diceCount int
 }
 
 //bfs breath first search on graph
 func (g Graph) bfs() bool {
 
-	fmt.Println("BFS")
 	//Reset backedges on every bfs call
 	for _, node := range g.Nodes {
 		node.Visited = false
@@ -86,7 +84,7 @@ func (g Graph) bfs() bool {
 
 	//Continue until queue is empty
 	for len(queue) > 0 {
-		fmt.Printf("queue: %+v \n", queue)
+		//fmt.Printf("queue: %+v \n", queue)
 		//dequeue item
 		nodeID := queue[0]
 		queue = queue[1:]
@@ -143,8 +141,8 @@ func (g Graph) canSpell() bool {
 		}
 	}
 
-	//
-	for index := g.minNodes + 1; index < len(g.Nodes); index++ {
+	//Check if letter nodes are connected to sink
+	for index := g.diceCount + 1; index < len(g.Nodes); index++ {
 		for _, e := range g.Nodes[index].Adj {
 
 			//Look at sink
@@ -161,15 +159,21 @@ func (g Graph) canSpell() bool {
 
 //Inputs passed into the program
 type Inputs struct {
-	Word string
-	Die  []string
+	Words []string
+	Dice  []string
 }
 
 func main() {
 
 	input := Inputs{
-		Word: "RAGE",
-		Die: []string{
+		Words: []string{
+			"RAKE",
+			"RAGE",
+			"SEEP",
+			"PEAR",
+			"SAP",
+		},
+		Dice: []string{
 			"ENG",
 			"SAA",
 			"PRR",
@@ -177,76 +181,70 @@ func main() {
 		},
 	}
 
-	var graph Graph
-	graph.NodeIDS = make(map[int]int)
-	nextID := 0
-	//Create Source add to graph
-	source := NewNode(0, SOURCE)
-	graph.Nodes = append(graph.Nodes, source)
-	//Create Sink Node
-	sink := NewNode(0, SINK)
+	for _, word := range input.Words {
 
-	for _, dice := range input.Die {
-		nextID++
-		//Connect to source
-		node := NewNode(nextID, DIE)
-		edge := NewEdge(source, node)
-		source.Adj = append(source.Adj, edge)
-		//Init dice letters slice
-		for _, letter := range dice {
+		var graph Graph
+		graph.NodeIDS = make(map[int]int)
+		nextID := 0
+		//Create Source add to graph
+		source := NewNode(0, SOURCE)
+		graph.Nodes = append(graph.Nodes, source)
+		//Create Sink Node
+		sink := NewNode(0, SINK)
+
+		for _, dice := range input.Dice {
+			nextID++
+			//Connect to source
+			node := NewNode(nextID, DIE)
+			edge := NewEdge(source, node)
+			source.Adj = append(source.Adj, edge)
+			//Init dice letters slice
+			for _, letter := range dice {
+				pos := letter - 'A'
+				node.Letters[pos] = true
+			}
+			node.Type = DIE
+			graph.Nodes = append(graph.Nodes, node)
+		}
+		graph.diceCount = nextID
+
+		//Create Letter Nodes
+		for _, letter := range word {
+			nextID++
+			node := NewNode(nextID, LETTER)
 			pos := letter - 'A'
 			node.Letters[pos] = true
-		}
-		node.Type = DIE
-		graph.Nodes = append(graph.Nodes, node)
-	}
-	graph.minNodes = nextID
 
-	//Create Letter Nodes
-	for _, letter := range input.Word {
-		nextID++
-		node := NewNode(nextID, LETTER)
-		pos := letter - 'A'
-		node.Letters[pos] = true
-
-		//Set Edges for each letter
-		for index := 1; index <= graph.minNodes; index++ {
-			if graph.Nodes[index].Letters[pos] == true {
-				edge := NewEdge(graph.Nodes[index], node)
-				graph.Nodes[index].Adj = append(graph.Nodes[index].Adj, edge)
-				node.Adj = append(node.Adj, edge.Reverse)
+			//Set Edges frome dice to letter
+			for index := 1; index <= graph.diceCount; index++ {
+				if graph.Nodes[index].Letters[pos] == true {
+					edge := NewEdge(graph.Nodes[index], node)
+					graph.Nodes[index].Adj = append(graph.Nodes[index].Adj, edge)
+					node.Adj = append(node.Adj, edge.Reverse)
+				}
 			}
+			edge := NewEdge(node, sink)
+			node.Adj = append(node.Adj, edge)
+			graph.Nodes = append(graph.Nodes, node)
 		}
-		edge := NewEdge(node, sink)
-		node.Adj = append(node.Adj, edge)
-		graph.Nodes = append(graph.Nodes, node)
-	}
-	//Add sink to end of graph
-	sink.ID = len(graph.Nodes)
+		//Add sink to end of graph
+		sink.ID = len(graph.Nodes)
 
-	graph.Nodes = append(graph.Nodes, sink)
-	for _, node := range graph.Nodes {
-		fmt.Printf("ID: %v, Type: %v \n", node.ID, node.Type)
-		for _, edge := range node.Adj {
-			fmt.Printf("edge for %v , %v -->  %v \n", node.ID, edge.From.ID, edge.To.ID)
-		}
-	}
-	fmt.Println("-----------------")
-	if graph.canSpell() == true {
-		fmt.Println("Can Spell")
+		graph.Nodes = append(graph.Nodes, sink)
+		//for _, node := range graph.Nodes {
+		//fmt.Println("-----------------")
+		//fmt.Printf("ID: %v, Type: %v \n", node.ID, node.Type)
+		//for _, edge := range node.Adj {
+		//fmt.Printf("edge for %v , %v -->  %v \n", node.ID, edge.From.ID, edge.To.ID)
+		//}
+		//}
+		fmt.Println("-----------------")
+		if graph.canSpell() == true {
+			fmt.Printf("Can Spell: %s \n", word)
+			fmt.Printf("Solution: %+v \n", graph.NodeIDS)
 
-	} else {
-		fmt.Println("Can't Spell")
-	}
-
-	fmt.Printf("Solution: %+v \n", graph.NodeIDS)
-
-	fmt.Println("-----------------")
-	for _, node := range graph.Nodes {
-		fmt.Printf("ID: %v, Type: %v \n", node.ID, node.Type)
-		for _, edge := range node.Adj {
-			fmt.Printf("edge for %v , %v -->  %v \n", node.ID, edge.From.ID, edge.To.ID)
+		} else {
+			fmt.Printf("Can't Spell: %s  \n", word)
 		}
 	}
-
 }
